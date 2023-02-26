@@ -1,0 +1,172 @@
+library(dplyr)
+#for kmodes
+library(cluster)
+library(klaR)
+library(factoextra)
+library(caret)
+library(clValid)
+#for fcm
+library(e1071)
+library(factoextra)
+library(advclust)
+#ensemble
+library(clue)
+
+#ensemble kmodes clustering
+#determine K using elbow method and silhouette method for cathegoric
+fviz_nbclust(cate,FUNcluster=kmodes, method = 'silhouette',k.max = 20)+
+ labs(subtitle='Silhouette kategorik')
+fviz_nbclust(cate,FUNcluster=kmodes, method = 'wss',k.max = 20)+
+ labs(subtitle='Elbow kategorik')
+#kmodes clustering
+set.seed(33)
+km1=kmodes(cate, 16, iter.max = 100,
+ weighted = FALSE, fast = TRUE)
+set.seed(33)
+km2=kmodes(cate, 7, iter.max = 100,
+ weighted = FALSE, fast = TRUE)
+ #calculate the clusters purity
+k=16
+i=0
+j=0
+njkm1=0
+nijkm1=0
+for(i in 1:length(cate)){
+ njkm1=0
+ tabel=table(km1$cluster,cate[,i])
+ for(j in 1:k){
+ nilai=data.frame(tabel[j,])
+ njkm1=njkm1+max(nilai)
+ j=j+1
+ }
+ nijkm1=nijkm1+njkm1
+ i=i+1
+}
+nijkm1/(4*2791)
+k=7
+i=0
+j=0
+njkm2=0
+nijkm2=0
+for(i in 1:length(cate)){
+ njkm2=0
+ tabel=table(km2$cluster,cate[,i])
+ for(j in 1:k){
+ nilai=data.frame(tabel[j,])
+ njkm2=njkm2+max(nilai)
+ j=j+1
+ }
+ nijkm2=nijkm2+njkm2
+ i=i+1
+}
+acckm1=nijkm1/(4*2791)
+acckm2=nijkm2/(4*2791)
+acc_km=cbind(acckm1,acckm2)
+colnames(acc_km)=c('k=16','k=7')
+acc_km
+
+#call the output
+km1$modes
+km1$size
+km1$withindiff
+km1$iterations
+km1
+tabelkm=cbind(player,km1$cluster)
+#export the results to xlsx file
+write.csv(tabelkm,"C:\\Users\\Asus\\Downloads\\Hasil KMODES Kategorik.csv")
+
+#determine K using Xie-Beni index for numeric
+xb=sapply(2:20,
+ function(k){validation.index(fuzzy.CM(X=nume,K=k, m=2,
+ max.iteration = 100,
+ RandomNumber = 12))@XB})
+xb
+plot(2:20,xb, main='Plot Xie-Beni Data Numerik',
+ type = 'b', pch=20, frame=F,
+ xlab = 'jumlah K klaster',
+ ylab = 'xie-beni index')
+#fuzzy cmeans clustering
+set.seed(33)
+fcm1=cmeans(nume,centers=2, iter.max = 50, dist = 'euclidean',method = 'cmeans',
+ m=2)
+#call the output
+fcm1$centers
+fcm1$membership
+fcm1$size
+fcm1$iter
+fcm$cluster
+tabelfcm=cbind(player,fcm1$cluster)
+View(tabelfcm)
+
+#export results to xlsx file
+write.csv(tabelfcm,"C:\\Users\\Asus\\Downloads\\Hasil FCM.csv")
+
+#mixed
+mix=data.frame(km1$cluster,fcm1$cluster)
+datmix=mix
+datmix$km1.cluster=as.factor(datmix$km1.cluster)
+datmix$fcm1.cluster=as.factor(datmix$fcm1.cluster)
+#determine K for mixed data
+fviz_nbclust(mix,kmodes, method = 'silhouette',k.max=20)+
+ labs(subtitle='Silhouette gabungan')
+fviz_nbclust(mix,kmodes, method = 'wss',k.max=20)+
+ labs(subtitle='Elbow gabungan')
+set.seed(33)
+mixed=kmodes(datmix, 19, iter.max=10,
+ weighted = FALSE, fast = TRUE)
+set.seed(33)
+mixed2=kmodes(datmix, 6, iter.max=10,
+ weighted = FALSE, fast = TRUE)
+#calculate the purity
+k=19
+i=0
+j=0
+njekm=0
+nijekm=0
+for(i in 1:length(datmix)){
+ njekm=0
+ tabel=table(mixed$cluster,datmix[,i])
+ for(j in 1:k){
+ nilai=data.frame(tabel[j,])
+ njekm=njekm+max(nilai)
+ j=j+1
+ }
+ nijekm=nijekm+njekm
+ i=i+1
+}
+nijekm/(2*2791)
+k=6
+i=0
+j=0
+njekm=0
+nijekm2=0
+for(i in 1:length(datmix)){
+ njekm=0
+ tabel=table(mixed2$cluster,datmix[,i])
+ for(j in 1:k){
+ nilai=data.frame(tabel[j,])
+ njekm=njekm+max(nilai)
+ j=j+1
+ }
+ nijekm2=nijekm2+njekm
+ i=i+1
+}
+nijekm2/(2*2791)
+p_ekm=nijekm/(2*2791)
+p_ekm2=nijekm2/(2*2791)
+tabelekm=cbind(p_ekm,p_ekm2)
+colnames(tabelekm)=c('k=19','k=6')
+tabelekm
+clusplot(mix, mixed$cluster, color=T, main = 'Clusplot Gabungan',
+ shade=T,labels=2, lines = 0)
+#call the mixed clustering output
+mixed
+mixed$size
+mixed$modes
+mixed$cluster
+mixed$iterations
+tabelhasilekm=cbind(player,mixed$cluster)
+View(tabelhasilekm)
+
+#export data to xlsx file
+write.csv(tabelhasilekm,"C:\\Users\\Asus\\Downloads\\Hasil Cluster.csv")
