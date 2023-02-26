@@ -1,0 +1,57 @@
+library(dplyr)
+#for kmodes
+library(cluster)
+library(klaR)
+library(factoextra)
+library(caret)
+library(clValid)
+#for fcm
+library(e1071)
+library(factoextra)
+library(advclust)
+#ensemble
+library(clue)
+
+#data input
+player=read.csv("C:\\Users\\Asus\\Downloads\\Football Player Stats.csv",header=T)
+str(player)
+sum(is.na(player))
+
+#transform cathegoric to numeric
+for(i in 1:length(player)){
+ if(i<=4 || i==36){
+ }
+ else{
+ for(j in 1:nrow(player)){
+ player[j,i]=as.numeric(player[j,i])
+ }
+ }
+}
+str(player)
+
+#outliers detection using boxplot
+boxplot(scale(player[,-c(1,2:4,36)]),main='Boxplot awal')
+
+#handling outliers with winsorizing method
+for(i in c(5:35,37:38)){
+ quan <- quantile(player[,i], probs=c(.25, .75), na.rm = T)
+ caps <- quantile(player[,i], probs=c(.05, .95), na.rm = T)
+ H <- 1.5 * IQR(player[,i], na.rm = T)
+ player[,i][player[,i] < (quan[1] - H)] <- caps[1]
+ player[,i][player[,i] > (quan[2] + H)] <- caps[2]
+}
+boxplot(scale(player[,-c(1,2:4,36)]), main='Boxplot setelah normalisasi')
+#split cathegoric and numeric
+#cathegoric
+cate=data.frame(player[,-c(1,5:35,37:38)])
+str(cate)
+#transform the cathegorical data to factor
+for(i in 1:length(cate)){
+cate[,i]=as.factor(cate[,i])
+}
+str(cate)
+#numeric
+nume=data.frame(player[,-c(1:4,36)])
+str(nume)
+#descriptive summary
+summary(nume)
